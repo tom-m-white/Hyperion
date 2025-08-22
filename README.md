@@ -29,7 +29,7 @@ Hyperion is a MCTS-NN based chess engine built primarily in C++. The Engine is s
 ## Tasks Completed
 - [x] Chess Logic Library
 - [x] Basic Monte-Carlo Tree Search Implementation
-- [ ] Initial Neural Network Creation (Supervised Learning)
-- [ ] Initial Neural Network Implementation 
+- [X] Initial Neural Network Creation (Supervised Learning)
+- [X] Initial Neural Network Implementation 
 - [ ] Neural Network Self-Play (Reinforcement Learning)
 - [ ] Refinements/Advanced Features

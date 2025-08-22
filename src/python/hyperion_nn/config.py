@@ -30,7 +30,7 @@ class PathsConfig:
 class HardwareBasedConfig:
 
     # ! IMPORTANT: these is ARBITRARY and should be changed to match the actual hardware capabilities (vram, gpu, etc.)
-    BATCH_SIZE = 512 #256 
+    BATCH_SIZE = 64 #256 
 
     NUM_WORKERS = 8
     
@@ -81,17 +81,17 @@ class ModelConfig:
     # |-----------|-----------|------------|------------|------------|
     # | 20b x 64f | 20b x 96f | 20b x 128f | 20b x 196f |*20b x 256f*|
     # |-----------|-----------|------------|------------|------------|
-    # | 16b x 64f | 16b x 96f |*16b x 128f*| 16b x 196f | 16b x 256f |
+    # | 16b x 64f | 16b x 96f |*16b x 128f*|*16b x 196f*| 16b x 256f | 16b x 512f
     # |-----------|-----------|------------|------------|------------|
     # | 12b x 64f |*12b x 96f*|*12b x 128f*| 12b x 196f | 12b x 256f |
     # |-----------|-----------|------------|------------|------------|
-    # |  8b x 64f | *8b x 96f*|  8b x 128f |  8b x 196f | 8b x 256f  |
+    # |  8b x 64f | *8b x 96f*|  8b x 128f | *8b x 196f*| 8b x 256f  |
     # |-----------|-----------|------------|------------|------------|
     # | *4b x 64f*|  4b x 96f |  4b x 128f |  4b x 196f | 4b x 256f  |
     # |-----------|-----------|------------|------------|------------|
 
     NUM_RESIDUAL_BLOCKS = 16
-    NUM_FILTERS =  196
+    NUM_FILTERS =  512
 
     POLICY_HEAD_SIZE = 64 * 73  # 64 squares * 73 possible moves (including underpromotions)
 
