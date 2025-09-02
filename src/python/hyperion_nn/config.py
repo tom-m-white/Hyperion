@@ -91,7 +91,7 @@ class ModelConfig:
     # |-----------|-----------|------------|------------|------------|
 
     NUM_RESIDUAL_BLOCKS = 16
-    NUM_FILTERS =  512
+    NUM_FILTERS =  196
 
     POLICY_HEAD_SIZE = 64 * 73  # 64 squares * 73 possible moves (including underpromotions)
 

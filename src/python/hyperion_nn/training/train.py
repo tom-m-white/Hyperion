@@ -207,18 +207,15 @@ def train_model():
     # 1) model initialization
     logger.info("Initializing model and optimizer...")
 
-    # >>> FIX: First, create the model instance and move it to the device.
     model = HyperionNN().to(device)
 
     # <<< OPTIMIZATION: PyTorch 2.0 Compile >>>
-    # Now, with the 'model' variable already defined, we can safely try to compile it.
     try:
         model = torch.compile(model)
         logger.info("Model compiled successfully with torch.compile().")
     except Exception as e:
         logger.warning(f"torch.compile() failed with error: {e}. Proceeding with the un-compiled model.")
 
-    # This part is now safe because 'model' is guaranteed to have a value.
     optimizer = optim.Adam(params=model.parameters(),
                         lr=config.TrainingConfig.LEARNING_RATE,
                         weight_decay=config.TrainingConfig.WEIGHT_DECAY)

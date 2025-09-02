@@ -9,6 +9,7 @@ build/
 data/
 logs/*
 venv/
+third_party/
 
  CMake generated files and directories
 build/

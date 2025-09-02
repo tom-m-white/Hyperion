@@ -9,40 +9,19 @@
 #include <vector>
 #include <sstream>
 
-// helper function to convert our Move object to a UCI-compliant string
-std::string move_to_uci_string(const hyperion::core::Move& move) {
-    using namespace hyperion::core;
-
-    std::string uci_move = square_to_algebraic(static_cast<int>(move.from_sq)) +
-                           square_to_algebraic(static_cast<int>(move.to_sq));
-
-    if (move.is_promotion()) {
-        switch (move.get_promotion_piece()) {
-            case P_QUEEN:  uci_move += 'q'; break;
-            case P_ROOK:   uci_move += 'r'; break;
-            case P_BISHOP: uci_move += 'b'; break;
-            case P_KNIGHT: uci_move += 'n'; break;
-            default: break;
-        }
-    }
-    return uci_move;
-}
-
 // Main UCI loop
 void uci_loop() {
     using namespace hyperion;
 
     core::Position pos; 
     engine::Search search_handler;
-
     std::string line;
     while (std::getline(std::cin, line)) {
         std::istringstream iss(line);
         std::string token;
         iss >> token;
-
         if (token == "uci") {
-            std::cout << "id name Hyperion 0.1.0-beta" << std::endl;
+            std::cout << "id name Hyperion 1.0.0-16b-196f" << std::endl;
             std::cout << "id author Tom and LJ" << std::endl;
             std::cout << "uciok" << std::endl;
         } 
@@ -106,7 +85,7 @@ void uci_loop() {
 
             if (movetime != -1) {
                 // Use the exact time specified by 'movetime'
-                time_to_allocate_ms = movetime;
+                time_to_allocate_ms = movetime * .80;
             } else if (wtime != -1 && btime != -1) {
                 // Determine time left for the current player
                 long time_left_ms = (pos.get_side_to_move() == core::WHITE) ? wtime : btime;

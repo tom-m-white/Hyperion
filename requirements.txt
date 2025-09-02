@@ -16,3 +16,23 @@ numpy>=1.21.0
 pandas>=2.0.0
 lmdb>=1.0.0
 tqdm>=4.64.0
+
+# Disregard everything below please...
+
+# sudo apt-get update
+# sudo apt-get install docker.io
+# sudo systemctl start docker
+# sudo systemctl enable docker
+
+# https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+
+# sudo usermod -aG docker $USER
+# docker run --gpus all -it --rm -v $(pwd):/workspace -w /workspace pytorch/pytorch:2.3.1-cuda12.1-cudnn8-devel
+# docker run --gpus all -it --rm --cap-add=SYS_PTRACE -v $(pwd):/workspace -w /workspace pytorch/pytorch:2.3.1-cuda12.1-cudnn8-devel
+# cmake -DCMAKE_PREFIX_PATH=$(python -c 'import torch; print(torch.utils.cmake_prefix_path)') ..
+# ./bin/HyperionEngine
+
+#degbuging
+# apt-get update
+# apt-get install -y gdb
+# gdb --args ./bin/HyperionEngine

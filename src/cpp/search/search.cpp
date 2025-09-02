@@ -27,6 +27,8 @@ constexpr double UCT_C = 1.414; // sqrt(2)
 // Constructs a Search object, initializing the random number generator
 // The random generator is used for the simulation (playout) phase of MCTS
 Search::Search() : random_generator(std::random_device{}()) {
+    std::string model_path = "/home/white/Hyperion/data/completed_models/hyperion_16b_196f.pt";
+    nn_ = std::make_unique<NeuralNetwork>(model_path);
 }
 
 
@@ -39,54 +41,45 @@ Search::Search() : random_generator(std::random_device{}()) {
     //  time_limit_ms: The maximum time in milliseconds to run the search
     // The best core::Move found for the root_pos
 core::Move Search::find_best_move(core::Position& root_pos, int time_limit_ms) {
-    // --- Setup ---
-    // Initialize the search tree with a root node
     root_node = std::make_unique<Node>();
-    
-    // Clear the transposition table from any previous search
     tt.clear();
-    // Store the root node in the transposition table
     tt.store(root_pos.current_hash, root_node.get());
+
+    // Evaluate the root once to get its value and policy for its children.
+    expand_and_evaluate(root_node.get(), root_pos);
 
     auto start_time = std::chrono::steady_clock::now();
     int iterations = 0;
 
-    // --- Main MCTS Loop ---
-    // The loop continues until the time limit is exceeded
-    while (true) {
+    // We start from 1 because we did one evaluation already.
+    for (iterations = 1; ; ++iterations) { 
         auto now = std::chrono::steady_clock::now();
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count() >= time_limit_ms) {
             break;
         }
 
-        // Create a copy of the position to modify during this iteration's traversal
-        core::Position search_pos = root_pos; 
-        
-        // MCTS consists of four main phases per iteration:
-        // 1. Selection: Traverse the tree to find a promising leaf node
+        core::Position search_pos = root_pos;
         Node* node = select(root_node.get(), search_pos);
-        // 2. Expansion: Add a new child to the selected node
-        node = expand(node, search_pos);
-        // 2. Expansion
-        /*
-        if (!is_terminal(search_pos)) { // Only expand if not a terminal node
-            node = expand(node, search_pos);
+
+        // We selected a leaf. Now evaluate it to expand it.
+        // Check if it's a real terminal node (game over)
+        core::MoveGenerator mg;
+        std::vector<core::Move> moves;
+        mg.generate_legal_moves(search_pos, moves);
+
+        if (moves.empty()) {
+            double terminal_value = search_pos.is_in_check() ? -1.0 : 0.0;
+            backpropagate(node, terminal_value);
+        } else {
+            // It's a leaf but not a terminal position, so expand and evaluate it.
+            expand_and_evaluate(node, search_pos);
         }
-        */
-        // 3. Simulation: Run a random playout from the new node
-        double result = simulate(search_pos);
-        // 4. Backpropagation: Update node statistics back up the tree
-        backpropagate(node, result);
-        
-        iterations++;
     }
     
-    // Output search statistics
     std::cout << "info depth " << iterations << " nodes " << tt.size() << std::endl;
-
-    // After the search, determine the best move from the root
     return get_best_move_from_root();
 }
+
 // ======================================================================================
 // ======================================================================================
 // ====================UNCOMENT BELOW FOR MCTS WITH STATIC EVALUATION====================
@@ -139,7 +132,7 @@ core::Move Search::find_best_move(core::Position& root_pos, int time_limit_ms) {
 
     // After the search, determine the best move from the root
     return get_best_move_from_root();
-}
+} */
 // ======================================================================================
 // ======================================================================================
 // ====================UNCOMENT ABOVE FOR MCTS WITH STATIC EVALUATION====================
@@ -156,61 +149,19 @@ core::Move Search::find_best_move(core::Position& root_pos, int time_limit_ms) {
     //  pos: The board position, which is updated as the selection traverses the tree
     // A pointer to the selected leaf Node
 Node* Search::select(Node* node, core::Position& pos) {
-    core::MoveGenerator move_gen;
-    std::vector<core::Move> legal_moves;
     while (true) {
-        move_gen.generate_legal_moves(pos, legal_moves);
-
-        // If the node is terminal (no legal moves) or not yet fully expanded,
-        // we have found our leaf node and stop the selection phase
-        if (legal_moves.empty() || !node->is_fully_expanded(legal_moves.size())) {
-            return node;
+        /*if (node == root_node.get()) {
+            std::cout << "DEBUG: Select is at ROOT node." << std::endl;
+        } else {
+            std::cout << "DEBUG: Select is at node with move " << core::move_to_uci_string(node->move) << std::endl;
         }
 
-        // --- Find the best child using UCT ---
-        Node* best_child = nullptr;
-        double max_score = -std::numeric_limits<double>::infinity();
 
-        // Iterate through all children to find the one with the highest UCT score
-        for (const auto& child : node->children) {
-            double score = uct_score(child.get(), node->visits);
-            if (score > max_score) {
-                max_score = score;
-                best_child = child.get();
-            }
-        }
-        
-        // This case should not be reached if the node is fully expanded
-        if (!best_child) { 
-            return node;
-        }
-
-        // Descend the tree by making the move of the best child
-        pos.make_move(best_child->move);
-        node = best_child;
-
-        // Clear the move list for the next iteration
-        legal_moves.clear();
-        
-    }
-    // ======================================================================================
-    // ======================================================================================
-    // ====================UNCOMENT BELOW FOR MCTS WITH STATIC EVALUATION====================
-    // ======================================================================================
-    // ======================================================================================
-}/*
-     while (true) {
-        // If the node is not fully expanded, we must expand it first. Selection ends.
-        if (!node->is_fully_expanded()) {
-            return node;
-        }
-
-        // If it's a leaf node (no children after being fully expanded), it's terminal.
         if (node->children.empty()) {
+            std::cout << "DEBUG: Selected a leaf node. Returning." << std::endl;
             return node;
         }
-
-        // --- Find the best child using UCT ---
+        */
         Node* best_child = nullptr;
         double max_score = -std::numeric_limits<double>::infinity();
 
@@ -222,218 +173,62 @@ Node* Search::select(Node* node, core::Position& pos) {
             }
         }
         
-        // This case should not be reached if node has children.
-        if (!best_child) { 
-            return node;
-        }
+        if (!best_child) return node; // Should not happen
 
-        // Descend to the best child
         pos.make_move(best_child->move);
         node = best_child;
     }
 }
-// ======================================================================================
-// ======================================================================================
-// ====================UNCOMENT ABOVE FOR MCTS WITH STATIC EVALUATION====================
-// ======================================================================================
-// ======================================================================================
 
-// ======================================================================================
-// ======================================================================================
-// ====================UNCOMENT BELOW FOR MCTS WITH STATIC EVALUATION====================
-// ======================================================================================
-// ======================================================================================
-
-*/
-//--
-// Search::expand
-//--
-// Performs the expansion phase of MCTS
-// If the given node is not terminal, it adds one new child node to it,
-// corresponding to the next unexplored move from this position
-    //  node: The leaf node to expand
-    //  pos: The board position corresponding to the leaf node
-    // A pointer to the newly created child node. If the node is terminal, returns the original node
-/*
-Node* Search::expand(Node* node, core::Position& pos) {
-    // Generate moves for this node IF they haven't been generated yet.
-    if (!node->moves_generated) {
-        core::MoveGenerator move_gen;
-        // The expensive legal move generation is now called only ONCE per node.
-        move_gen.generate_legal_moves(pos, node->untried_moves);
-        node->moves_generated = true;
-        // Optional: Shuffle untried_moves to add randomness
-        // std::shuffle(node->untried_moves.begin(), node->untried_moves.end(), random_generator);
-    }
+void Search::expand_and_evaluate(Node* node, const core::Position& pos) {
+    // --- Step A: Call the Neural Network ---
+    InferenceResult nn_result = nn_->infer(pos);
+    double value = nn_result.value;
     
-    // If there are still untried moves, expand one.
-    if (!node->untried_moves.empty()) {
-        core::Move move_to_expand = node->untried_moves.back();
-        node->untried_moves.pop_back();
+    // --- Step B: Backpropagate the value immediately ---
+    backpropagate(node, value);
 
-        pos.make_move(move_to_expand);
-
-        // Create the new child node
-        node->children.push_back(std::make_unique<Node>(node, move_to_expand));
-        Node* new_child = node->children.back().get();
-
-        // Check the transposition table. If we've seen this position before,
-        // we should ideally use the existing node. This is a more advanced optimization.
-        // For now, we'll just store it.
-        tt.store(pos.current_hash, new_child);
-        
-        return new_child;
-    }
-
-    // This can happen if the node is terminal (no legal moves).
-    return node;
-}
-*/
-// ======================================================================================
-// ======================================================================================
-// ====================UNCOMENT ABOVE FOR MCTS WITH STATIC EVALUATION====================
-// ======================================================================================
-// ======================================================================================
-Node* Search::expand(Node* node, core::Position& pos) {
+    // --- Step C: Create child nodes using the policy from the NN ---
     core::MoveGenerator move_gen;
     std::vector<core::Move> legal_moves;
     move_gen.generate_legal_moves(pos, legal_moves);
 
-    // If the node is terminal (a checkmate or stalemate), we can't expand it further
-    if (legal_moves.empty()) {
-        return node;
-    }
+    // Optional but good: Normalize the policy for legal moves
+    // (Softmax on legal move logits)
+    // ... advanced step, can skip for now ...
 
-    // Expand by picking the next unexplored move
-    const core::Move& move_to_expand = legal_moves[node->children.size()];
-    
-    // Apply the move to the board position
-    pos.make_move(move_to_expand);
-
-    // Create a new child node representing the new position
-    node->children.push_back(std::make_unique<Node>(node, move_to_expand));
-    Node* new_child = node->children.back().get();
-
-    // Store the new node in the transposition table for future lookups
-    tt.store(pos.current_hash, new_child);
-    
-    // Return the newly created node for the simulation phase
-    return new_child;
-}
-// ======================================================================================
-// ======================================================================================
-// ====================UNCOMENT BELOW FOR MCTS WITH STATIC EVALUATION====================
-// ======================================================================================
-// ======================================================================================
-//--
-/* Search::simulate */
-//--
-// Performs the simulation (playout) phase of MCTS
-// From the given position, it plays a random game to its conclusion
-    //  pos: The starting position for the simulation
-    // The result of the game from the perspective of the current player (+1 for win, -1 loss, 0 draw)
-/*
-double Search::simulate(core::Position& pos) {
-    core::Position sim_pos = pos;
-    return limited_depth_playout(sim_pos, this->random_generator);
-}
-*/
-// ======================================================================================
-// ======================================================================================
-// ====================UNCOMENT ABOVE FOR MCTS WITH STATIC EVALUATION====================
-// ======================================================================================
-// ======================================================================================
-
-double Search::simulate(core::Position& pos) {
-    // Delegate the simulation to a random playout function
-    return random_playout(pos, this->random_generator);
-}
-
-// ======================================================================================
-// ======================================================================================
-// ====================UNCOMENT BELOW FOR MCTS WITH STATIC EVALUATION====================
-// ======================================================================================
-// ======================================================================================
-//--
-/* Search::backpropagate */
-//--
-// Performs the backpropagation phase of MCTS
-// It updates the visit counts and outcome statistics of all nodes from the simulation's start node up to the root
-//  result The result of the simulation
-/*
-void Search::backpropagate(Node* node, double result) {
-    while (node != nullptr) {
-        // Atomically increment the visit count (this is fine for integers)
-        node->visits.fetch_add(1, std::memory_order_relaxed);
-
-        // Use a compare-and-swap (CAS) loop for atomic floating-point addition
-        double current_value = node->value.load(std::memory_order_relaxed);
-        double new_value;
-        do {
-            new_value = current_value + result;
-        } while (!node->value.compare_exchange_weak(current_value, new_value, 
-                                                     std::memory_order_release, 
-                                                     std::memory_order_relaxed));
-        // `current_value` is automatically updated by compare_exchange_weak on failure,
-        // so the loop retries with the latest value
-
-        // Invert the result for the parent node
-        result = -result;
+    for (const auto& move : legal_moves) {
+        node->children.push_back(std::make_unique<Node>(node, move));
+        Node* child = node->children.back().get();
         
-        // Move up to the parent
-        node = node->parent;
+        try {
+            // <<< USE THE ENCODER HERE >>>
+            int policy_index = get_policy_index(move, pos);
+            // The policy from the NN is usually logits, apply softmax to get probabilities
+            // For simplicity, we can often just use the raw logit value if it's positive,
+            // or exponentiate it. A true softmax over all legal moves is best.
+            // Let's do a simple exp() for now.
+            child->policy_prior = std::exp(nn_result.policy[policy_index]);
+        } catch (const std::runtime_error& e) {
+            // If a move can't be encoded, give it a default low prior
+            child->policy_prior = 0.001; 
+            // std::cerr << "Warning: " << e.what() << std::endl;
+        }
     }
 }
-    */
-// ======================================================================================
-// ======================================================================================
-// ====================UNCOMENT ABVOE FOR MCTS WITH STATIC EVALUATION====================
-// ======================================================================================
-// ======================================================================================
-void Search::backpropagate(Node* node, double result) {
-    // The simulation result is from the perspective of the player who just moved to 'node'
-    // We traverse up the tree to the root
+
+// --- 5. BACKPROPAGATION ---
+void Search::backpropagate(Node* node, double value) {
     while (node != nullptr) {
-        // Increment the visit count for the current node
         node->visits++;
-        // The result must be inverted for the parent, as it's from the opponent's perspective
-        result = -result; 
-        // Update the node's value with the result
-        node->value += result;
-        // Move up to the parent node
+        // The value passed is for the node's position. The parent's value
+        // should be updated with the negative of this, as it's the opponent's turn.
+        node->value += (node->parent == nullptr) ? value : -value; 
+        
         node = node->parent;
+        value = -value; // Invert for the next level up
     }
 }
-// ======================================================================================
-// ======================================================================================
-// ====================UNCOMENT BELOW FOR MCTS WITH STATIC EVALUATION====================
-// ======================================================================================
-// ======================================================================================
-//--
-/* Search::uct_score */
-//--
-/*
-double Search::uct_score(const Node* node, int parent_visits) const {
-    if (node->visits == 0) {
-        return std::numeric_limits<double>::infinity();
-    }
-    // Exploitation term: Average value of the node from its own perspective
-    // The parent wants to choose the move that is best for it, which means
-    // choosing the child node with the lowest value (since the child's value
-    // represents the opponent's advantage)
-    double exploitation_term = -node->value / node->visits;
-    
-    // Exploration term
-    double exploration_term = UCT_C * std::sqrt(std::log(static_cast<double>(parent_visits)) / node->visits);
-    
-    return exploitation_term + exploration_term;
-}
-*/
-// ======================================================================================
-// ======================================================================================
-// ====================UNCOMENT ABOVE FOR MCTS WITH STATIC EVALUATION====================
-// ======================================================================================
-// ======================================================================================
 
 //--
 /* Search::uct_score */
@@ -445,17 +240,14 @@ double Search::uct_score(const Node* node, int parent_visits) const {
     // The calculated UCT score as a double
 
 double Search::uct_score(const Node* node, int parent_visits) const {
-    // If a node has not been visited, prioritize it by giving it an infinite score
-    if (node->visits == 0) {
-        return std::numeric_limits<double>::infinity();
-    }
-    // Exploitation term: the average value of the node from the parent's perspective
-    double q_value = node->value / node->visits;
-    // Exploration term: encourages visiting less-explored nodes
-    double u_value = UCT_C * std::sqrt(std::log(parent_visits) / node->visits);
+    // Q(s,a) - Exploitation term: Average value of the child node.
+    // The child's value is from its perspective, so we need to negate it for the parent.
+    double q_value = (node->visits == 0) ? 0.0 : -node->value / node->visits;
+
+    // U(s,a) - Exploration term, now influenced by the policy prior P(s,a).
+    // TODO: You need to add `double policy_prior = 1.0;` to your Node struct for this to work.
+    double u_value = UCT_C * node->policy_prior * (std::sqrt(parent_visits) / (1.0 + node->visits));
     
-    // The final score is the sum of the exploitation and exploration terms
-    // The node's value is already stored from the parent's perspective, so no negation is needed here
     return q_value + u_value;
 }
 //--
@@ -482,24 +274,5 @@ core::Move Search::get_best_move_from_root() {
     }
     return best_move;
 }
-// ======================================================================================
-// ======================================================================================
-// ====================UNCOMENT BELOW FOR MCTS WITH STATIC EVALUATION====================
-// ======================================================================================
-// ======================================================================================
-/*
-// herlper function to check for terminal nodes in the search
-bool Search::is_terminal(core::Position& pos) {
-    core::MoveGenerator move_gen;
-    std::vector<core::Move> legal_moves;
-    move_gen.generate_legal_moves(pos, legal_moves);
-    return legal_moves.empty() || pos.halfmove_clock >= 100;
-}
-*/
-// ======================================================================================
-// ======================================================================================
-// ====================UNCOMENT ABOVE FOR MCTS WITH STATIC EVALUATION====================
-// ======================================================================================
-// ======================================================================================
 } // namespace engine
 } // namespace hyperion

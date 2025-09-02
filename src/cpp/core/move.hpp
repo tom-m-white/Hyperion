@@ -1,6 +1,7 @@
 // Assumed content of Hyperion/src/cpp/core/move.hpp
 #ifndef HYPERION_CORE_MOVE_HPP
 #define HYPERION_CORE_MOVE_HPP
+#include <string>
 
 #include "constants.hpp" // For piece_type_e, square_e
 
@@ -187,6 +188,30 @@ struct Move {
     }
 };
 
+// Helper to convert a square index (0-63) to algebraic notation ("a1"-"h8")
+inline std::string square_to_algebraic(int sq) {
+    if (sq < 0 || sq > 63) return "-";
+    char file = 'a' + (sq % 8);
+    char rank = '1' + (sq / 8);
+    return {file, rank};
+}
+
+// Helper function to convert our Move object to a UCI-compliant string
+inline std::string move_to_uci_string(const Move& move) {
+    std::string uci_move = square_to_algebraic(static_cast<int>(move.from_sq)) +
+                           square_to_algebraic(static_cast<int>(move.to_sq));
+
+    if (move.is_promotion()) {
+        switch (move.get_promotion_piece()) {
+            case P_QUEEN:  uci_move += 'q'; break;
+            case P_ROOK:   uci_move += 'r'; break;
+            case P_BISHOP: uci_move += 'b'; break;
+            case P_KNIGHT: uci_move += 'n'; break;
+            default: break;
+        }
+    }
+    return uci_move;
+}
 } // namespace core
 } // namespace hyperion
 #endif // HYPERION_CORE_MOVE_HPP
