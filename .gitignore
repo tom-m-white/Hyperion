@@ -17,7 +17,8 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 CTestTestfile.cmake
-Makefile # If top-level Makefiles are generated, though usually inside build/
+Makefile
+CmakeList(old).txt
 
 # Compiled Object files
 *.o
