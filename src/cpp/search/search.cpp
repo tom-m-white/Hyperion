@@ -181,52 +181,37 @@ Node* Search::select(Node* node, core::Position& pos) {
 }
 
 void Search::expand_and_evaluate(Node* node, const core::Position& pos) {
-    // --- Step A: Call the Neural Network ---
+
     InferenceResult nn_result = nn_->infer(pos);
     double value = nn_result.value;
-    
-    // --- Step B: Backpropagate the value immediately ---
+     
     backpropagate(node, value);
 
-    // --- Step C: Create child nodes using the policy from the NN ---
     core::MoveGenerator move_gen;
     std::vector<core::Move> legal_moves;
     move_gen.generate_legal_moves(pos, legal_moves);
-
-    // Optional but good: Normalize the policy for legal moves
-    // (Softmax on legal move logits)
-    // ... advanced step, can skip for now ...
 
     for (const auto& move : legal_moves) {
         node->children.push_back(std::make_unique<Node>(node, move));
         Node* child = node->children.back().get();
         
         try {
-            // <<< USE THE ENCODER HERE >>>
             int policy_index = get_policy_index(move, pos);
-            // The policy from the NN is usually logits, apply softmax to get probabilities
-            // For simplicity, we can often just use the raw logit value if it's positive,
-            // or exponentiate it. A true softmax over all legal moves is best.
-            // Let's do a simple exp() for now.
+           
             child->policy_prior = std::exp(nn_result.policy[policy_index]);
         } catch (const std::runtime_error& e) {
-            // If a move can't be encoded, give it a default low prior
             child->policy_prior = 0.001; 
-            // std::cerr << "Warning: " << e.what() << std::endl;
         }
     }
 }
 
-// --- 5. BACKPROPAGATION ---
 void Search::backpropagate(Node* node, double value) {
     while (node != nullptr) {
         node->visits++;
-        // The value passed is for the node's position. The parent's value
-        // should be updated with the negative of this, as it's the opponent's turn.
         node->value += (node->parent == nullptr) ? value : -value; 
         
         node = node->parent;
-        value = -value; // Invert for the next level up
+        value = -value;
     }
 }
 
@@ -240,12 +225,8 @@ void Search::backpropagate(Node* node, double value) {
     // The calculated UCT score as a double
 
 double Search::uct_score(const Node* node, int parent_visits) const {
-    // Q(s,a) - Exploitation term: Average value of the child node.
-    // The child's value is from its perspective, so we need to negate it for the parent.
     double q_value = (node->visits == 0) ? 0.0 : -node->value / node->visits;
 
-    // U(s,a) - Exploration term, now influenced by the policy prior P(s,a).
-    // TODO: You need to add `double policy_prior = 1.0;` to your Node struct for this to work.
     double u_value = UCT_C * node->policy_prior * (std::sqrt(parent_visits) / (1.0 + node->visits));
     
     return q_value + u_value;
@@ -258,9 +239,8 @@ double Search::uct_score(const Node* node, int parent_visits) const {
     // The core::Move corresponding to the most visited child of the root node
 core::Move Search::get_best_move_from_root() {
     int max_visits = -1;
-    core::Move best_move; // Default-constructs a "null" move
-
-    // A sanity check to ensure the root node exists
+    core::Move best_move; 
+    
     if (!root_node) {
         return best_move;
     }

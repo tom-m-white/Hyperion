@@ -85,9 +85,6 @@ int get_policy_index(const core::Move& move, const core::Position& pos) {
     }
     
     if (move_type_idx == -1) {
-        // This move could not be encoded. This might happen with illegal moves
-        // or edge cases. For a robust engine, you might want to log this.
-        // For now, returning a sentinel value or throwing is fine.
         throw std::runtime_error("Could not encode move: " + move_to_uci_string(move));
     }
 

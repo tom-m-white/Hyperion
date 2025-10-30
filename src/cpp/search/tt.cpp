@@ -11,15 +11,12 @@ namespace engine {
     //  hash The Zobrist hash of the position to find
     // A pointer to the Node if the hash is found in the table; otherwise, returns nullptr
 Node* TranspositionTable::find(uint64_t hash) {
-    // Use the find method of unordered_map. It returns an iterator
+    
     auto it = table.find(hash);
-
-    // If the iterator is the 'end' iterator, the key was not found
     if (it == table.end()) {
         return nullptr;
     }
 
-    // Otherwise, the value is the second element of the pair pointed to by the iterator
     return it->second;
 }
 

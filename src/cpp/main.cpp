@@ -67,7 +67,6 @@ void uci_loop() {
             }
         } 
         else if (token == "go") {
-            // --- MODIFIED SECTION FOR TIME MANAGEMENT ---
 
             // Default values for UCI time control parameters
             long wtime = -1, btime = -1, movetime = -1;

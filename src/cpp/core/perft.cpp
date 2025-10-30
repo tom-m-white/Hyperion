@@ -68,7 +68,6 @@ uint64_t perft(hyperion::core::Position& pos, int depth, hyperion::core::MoveGen
             // After make_move, pos.side_to_move has flipped. So, the opponent of the
             // original_side_to_move is now pos.get_side_to_move().
             // We need to check if original_side_to_move's king is attacked by the NEW side_to_move.
-            // Your current pos.is_king_in_check(king_owner_color) already does this correctly.
         if (!pos.is_king_in_check(original_side_to_move)) {
             nodes += perft(pos, depth - 1, move_gen);
         }
@@ -131,7 +130,7 @@ void perft_divide(hyperion::core::Position& pos, int depth, hyperion::core::Move
     std::vector<hyperion::core::Move> pseudo_moves;
     move_gen.generate_pseudo_legal_moves(pos, pseudo_moves); // Get pseudo-legal moves
 
-    // Optional: Sort moves for consistent output
+
     std::sort(pseudo_moves.begin(), pseudo_moves.end(), [](const hyperion::core::Move& a, const hyperion::core::Move& b) {
         if (a.from_sq != b.from_sq) return static_cast<int>(a.from_sq) < static_cast<int>(b.from_sq);
         return static_cast<int>(a.to_sq) < static_cast<int>(b.to_sq);

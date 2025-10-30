@@ -136,7 +136,6 @@ std::vector<Puzzle> load_puzzles(const std::string& filename) {
             }
         } else if (line.rfind("1...", 0) == 0 || line.rfind("1.", 0) == 0) {
             if (!current_fen.empty() && current_elo > 0) {
-                // Parse the line and add the puzzle to the vector
                 std::stringstream ss(line);
                 std::string move_num, san;
                 ss >> move_num >> san;
@@ -147,7 +146,6 @@ std::vector<Puzzle> load_puzzles(const std::string& filename) {
                     puzzles.push_back({current_fen, uci_solution, current_elo});
                 }
                 
-                // Reset for the next puzzle block
                 current_fen.clear();
                 current_elo = 0;
             }
@@ -279,7 +277,6 @@ double update_rating_deviation(double player_rd, double player_elo, const std::v
         return std::min(350.0, sqrt(player_rd * player_rd + system_volatility * system_volatility));
     }
 
-    // --- Step 1: Calculate estimated variance 'v' ---
     // This is based on all the opponents (puzzles) faced in this rating period.
     double v_inverse = 0.0;
     for (const auto& puzzle : puzzles_played) {
@@ -289,7 +286,6 @@ double update_rating_deviation(double player_rd, double player_elo, const std::v
     }
     double v = 1.0 / (q * q * v_inverse);
 
-    // --- Step 2: Calculate the improvement 'delta' ---
     // This is how much the player over or under-performed expectations.
     double delta = 0.0;
     for (size_t i = 0; i < puzzles_played.size(); ++i) {
@@ -300,8 +296,7 @@ double update_rating_deviation(double player_rd, double player_elo, const std::v
     }
     delta *= (q * v);
 
-    // --- Step 3: Update the RD ---
-    // The new RD is based on the old RD and the variance of outcomes.
+   
     double new_rd = sqrt(1.0 / (1.0 / (player_rd * player_rd) + 1.0 / v));
 
     // A check to ensure RD doesn't become unrealistically small
