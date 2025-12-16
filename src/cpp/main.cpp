@@ -8,8 +8,6 @@
 #include <string>
 #include <vector>
 #include <sstream>
-
-// Main UCI loop
 void uci_loop() {
     using namespace hyperion;
 
@@ -67,11 +65,7 @@ void uci_loop() {
             }
         } 
         else if (token == "go") {
-
-            // Default values for UCI time control parameters
             long wtime = -1, btime = -1, movetime = -1;
-            
-            // Parse the 'go' command line for time controls
             std::string go_token;
             while (iss >> go_token) {
                 if (go_token == "wtime") iss >> wtime;
@@ -80,19 +74,15 @@ void uci_loop() {
                 // Note: winc, binc, movestogo could also be parsed here for more advanced time management
             }
 
-            int time_to_allocate_ms = 10000; // Default time (10s) if no time controls are sent
+            int time_to_allocate_ms = 10000;
 
             if (movetime != -1) {
-                // Use the exact time specified by 'movetime'
                 time_to_allocate_ms = movetime * .80;
             } else if (wtime != -1 && btime != -1) {
-                // Determine time left for the current player
                 long time_left_ms = (pos.get_side_to_move() == core::WHITE) ? wtime : btime;
                 
-                // Allocate 1/50th of the remaining time for the current move
                 time_to_allocate_ms = time_left_ms / 50;
                 
-                // Safety check: if time is very low, don't use more than half of it
                 if (time_to_allocate_ms >= time_left_ms) {
                     time_to_allocate_ms = time_left_ms / 2;
                 }

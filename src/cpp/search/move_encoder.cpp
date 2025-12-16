@@ -7,13 +7,13 @@ namespace engine {
 
 namespace {
 
-// --- Constants matching move_encoder.py ---
+// Constants matching move_encoder.py
 constexpr int QUEEN_MOVE_PLANES = 56;
 constexpr int KNIGHT_MOVE_PLANES = 8;
 constexpr int UNDERPROMOTION_MOVE_PLANES = 9;
 constexpr int TOTAL_MOVE_PLANES = QUEEN_MOVE_PLANES + KNIGHT_MOVE_PLANES + UNDERPROMOTION_MOVE_PLANES; // Should be 73
 
-// --- Maps for direction lookups ---
+//Maps for direction lookups
 // Queen-like move directions
 const std::map<int, int> QUEEN_DIRECTION_MAP = {
     {8, 0}, {9, 1}, {1, 2}, {-7, 3}, {-8, 4}, {-9, 5}, {-1, 6}, {7, 7}
@@ -39,14 +39,14 @@ int get_policy_index(const core::Move& move, const core::Position& pos) {
     int delta = end_sq - start_sq;
     int move_type_idx = -1;
 
-    // --- Case 1: Knight Moves ---
+    //Knight Moves
     if (move.piece_moved == P_KNIGHT) {
         auto it = KNIGHT_DIRECTION_MAP.find(delta);
         if (it != KNIGHT_DIRECTION_MAP.end()) {
             move_type_idx = QUEEN_MOVE_PLANES + it->second;
         }
     }
-    // --- Case 2: Underpromotions ---
+    //Case 2: Underpromotions
     else if (move.is_promotion() && move.get_promotion_piece() != P_QUEEN) {
         int color = pos.get_side_to_move();
         int direction_offset = -1;
@@ -67,7 +67,7 @@ int get_policy_index(const core::Move& move, const core::Position& pos) {
                             (promo_it->second * 3 + direction_offset);
         }
     }
-    // --- Case 3: All other moves (Queen-like) ---
+    // All other moves (Queen-like)
     else {
         int start_file = start_sq % 8;
         int start_rank = start_sq / 8;

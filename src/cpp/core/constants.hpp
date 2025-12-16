@@ -7,15 +7,15 @@ namespace core {
     
 using bitboard_t = uint64_t;
 
-// --- Mailbox empty position val ---
+// Mailbox empty position val
 const int EMPTY_MAILBOX_VAL = -1;
 
-// --- Constants for pieces ---
+// Constants for pieces
 const char EMPTY_SQUARE_CHAR = '.';
 const char W_PAWN = 'P', W_KNIGHT = 'N', W_BISHOP = 'B', W_ROOK = 'R', W_QUEEN = 'Q', W_KING = 'K';
 const char B_PAWN = 'p', B_KNIGHT = 'n', B_BISHOP = 'b', B_ROOK = 'r', B_QUEEN = 'q', B_KING = 'k';
 
-// --- Square definitions --- 
+// Square definitions
 const int A1 = 0, B1 = 1, C1 = 2, D1 = 3, E1 = 4, F1 = 5, G1 = 6, H1 = 7;
 const int A2 = 8, B2 = 9, C2 = 10, D2 = 11, E2 = 12, F2 = 13, G2 = 14, H2 = 15;
 const int A3 = 16, B3 = 17, C3 = 18, D3 = 19, E3 = 20, F3 = 21, G3 = 22, H3 = 23;
@@ -39,18 +39,18 @@ enum class square_e {
                
 };
 
-// --- Color ---
+//Color
 const int WHITE = 0;
 const int BLACK = 1;
 
-// --- Castling Constants ---
+//Castling Constants
 const int WK_CASTLE_FLAG = 1; // 0001
 const int WQ_CASTLE_FLAG = 2; // 0010
 const int BK_CASTLE_FLAG = 4; // 0100
 const int BQ_CASTLE_FLAG = 8; // 1000
 
 
-// --- Different Piece Types ---
+// Different Piece Types
 enum piece_type_e {
     P_PAWN = 0,
     P_KNIGHT,
@@ -62,7 +62,7 @@ enum piece_type_e {
     NUM_PIECE_TYPES = 6 // Number of actual piece types (Pawn to King)
 };
 
-// --- Rank and File Helpers (derived from square indices) ---
+//Rank and File Helpers (derived from square indices)
 // 0-indexed ranks (Rank 1 is 0, Rank 8 is 7)
 inline int get_rank_idx(square_e s) {
     if (s == square_e::NO_SQ) return -1;

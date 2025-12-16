@@ -203,7 +203,7 @@ double random_playout(core::Position position, std::mt19937& gen) {
         // Generate all legal moves for the current player
         move_gen.generate_legal_moves(position, move_list);
 
-        // --- Check for Game Over conditions ---
+        //Check for Game Over conditions
         if (move_list.empty()) {
             // No legal moves available
             if (position.is_in_check()) {
@@ -216,13 +216,13 @@ double random_playout(core::Position position, std::mt19937& gen) {
             }
         }
         
-        // --- Check for draw by the 50-move rule ---
+        //Check for draw by the 50-move rule
         // The game is a draw if 50 full moves (100 half-moves) occur without a capture or pawn move
         if (position.halfmove_clock >= 100) {
             return 0.0;
         }
 
-        // --- Pick and play a random move ---
+        //Pick and play a random move
         // Create a uniform distribution to select a random move index
         std::uniform_int_distribution<> distrib(0, move_list.size() - 1);
         // Select a random move from the list of legal moves

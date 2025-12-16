@@ -107,10 +107,6 @@ struct Move {
          piece_type_e pm = P_NONE, piece_type_e pc = P_NONE, MoveFlag f = NORMAL_MOVE)
         : from_sq(from), to_sq(to), piece_moved(pm), piece_captured(pc), flags(f) {}
 
-    //--------------------------------
-    // Helper functions to check flags
-    //--------------------------------
-
     /* Move::is_capture */
     // Checks if the move is a capture.
     // Returns true if the CAPTURE bit is set in the flags member, false otherwise.
